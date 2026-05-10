@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="自律星球">
+<title>自律星球</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Duolingo 风格 */
+  --bg:#F7F7F7;
+  --bg2:#FFFFFF;
+  --bg3:#F0F0F0;
+  --border:#E5E5E5;
+  --border-dk:#AFAFAF;
+  --text:#1C1C1E;
+  --muted:#6B7280;
+  --dim:#ADADAD;
+
+  --green:#58CC02;--green-dk:#46A302;--green-lt:#D7F5B1;
+  --blue:#1CB0F6;--blue-dk:#0891D1;--blue-lt:#C8EFFD;
+  --gold:#FFC800;--gold-dk:#E6A800;--gold-lt:#FFF3CD;
+  --purple:#CE82FF;--purple-dk:#A560D8;--purple-lt:#F0DCFF;
+  --red:#FF4B4B;--red-dk:#CC0000;--red-lt:#FFD0D0;
+  --orange:#FF9600;--orange-dk:#CC7A00;--orange-lt:#FFE8C0;
+
+  --grad1:linear-gradient(135deg,#58CC02,#1CB0F6);
+  --grad2:linear-gradient(135deg,#58CC02,#1CB0F6);
+  --grad3:linear-gradient(135deg,#FFC800,#FF9600);
+
+  --shadow-green:0 4px 0 #46A302;
+  --shadow-blue:0 4px 0 #0891D1;
+  --shadow-gold:0 4px 0 #E6A800;
+  --shadow-red:0 4px 0 #CC0000;
+  --shadow-gray:0 4px 0 #AFAFAF;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Noto Sans SC',sans-serif;overflow:hidden;}
+body{display:flex;flex-direction:column;position:relative;}
+
+/* SAFE AREAS */
+.safe-top{height:env(safe-area-inset-top);background:var(--bg);flex-shrink:0;}
+.safe-bottom{height:env(safe-area-inset-bottom);background:var(--bg);flex-shrink:0;}
+
+/* SCREENS */
+.screen{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;transition:transform .4s cubic-bezier(.4,0,.2,1),opacity .4s;overflow:hidden;}
+.screen.hidden{transform:translateX(100%);opacity:0;pointer-events:none;}
+.screen.out{transform:translateX(-100%);opacity:0;pointer-events:none;}
+
+/* ── WELCOME SCREEN ── */
+#s-welcome{background:var(--bg);align-items:center;justify-content:center;padding:32px 24px;}
+.welcome-bg{position:absolute;top:0;left:0;right:0;bottom:0;overflow:hidden;}
+.welcome-bg::before{content:'';position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,#7BC4CC30,transparent 70%);top:-200px;left:-200px;}
+.welcome-bg::after{content:'';position:absolute;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,#F0A0A830,transparent 70%);bottom:-100px;right:-100px;}
+.planet{font-size:80px;margin-bottom:24px;animation:float 3s ease-in-out infinite;}
+@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-12px);}}
+.app-name{font-size:32px;font-weight:900;background:var(--grad2);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px;letter-spacing:-.5px;}
+.app-sub{font-size:14px;color:var(--muted);margin-bottom:48px;line-height:1.6;text-align:center;}
+.start-btn{width:100%;max-width:320px;background:var(--green);border:none;border-radius:20px;padding:18px;font-size:16px;font-weight:900;color:#fff;box-shadow:var(--shadow-green);cursor:pointer;font-family:inherit;position:relative;overflow:hidden;letter-spacing:.02em;}
+.start-btn::after{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);animation:shine 2.5s infinite;}
+@keyframes shine{0%{left:-100%;}100%{left:100%;}}
+.login-hint{margin-top:16px;font-size:12px;color:var(--dim);cursor:pointer;text-decoration:underline;}
+
+/* ── QUIZ SCREEN ── */
+#s-quiz{background:var(--bg);}
+.quiz-header{padding:env(safe-area-inset-top) 20px 0;padding-top:calc(env(safe-area-inset-top) + 16px);background:var(--bg);flex-shrink:0;}
+.quiz-progress{display:flex;align-items:center;gap:12px;margin-bottom:20px;}
+.quiz-back{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:4px;}
+.prog-dots{display:flex;gap:6px;flex:1;}
+.pdot{height:4px;border-radius:2px;flex:1;background:var(--border);transition:background .3s;}
+.pdot.done{background:var(--green);}
+.pdot.active{background:var(--blue);}
+.quiz-scroll{flex:1;overflow-y:auto;padding:0 20px 32px;-webkit-overflow-scrolling:touch;}
+.quiz-scroll::-webkit-scrollbar{display:none;}
+.q-step{display:none;}
+.q-step.active{display:block;}
+.q-emoji{font-size:40px;margin-bottom:12px;}
+.q-title{font-size:22px;font-weight:900;color:var(--text);margin-bottom:6px;line-height:1.3;}
+.q-sub{font-size:13px;color:var(--muted);margin-bottom:24px;}
+.name-inp{width:100%;background:var(--bg2);border:2px solid var(--border);border-radius:16px;padding:16px 18px;color:var(--text);font-size:18px;font-weight:700;font-family:inherit;-webkit-appearance:none;outline:none;transition:border-color .2s;}
+.name-inp:focus{border-color:var(--blue);}
+.option-grid{display:flex;flex-direction:column;gap:10px;}
+.option-card{background:#fff;border:2px solid var(--border-dk);border-radius:16px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:all .2s;user-select:none;box-shadow:0 3px 0 var(--border-dk);}
+.option-card.selected{border-color:var(--green-dk);background:var(--green-lt);box-shadow:0 3px 0 var(--green-dk);}
+.option-card.selected .opt-check{background:var(--green);border-color:var(--green);}
+.opt-emoji{font-size:22px;flex-shrink:0;}
+.opt-text{flex:1;}
+.opt-label{font-size:14px;font-weight:700;color:var(--text);}
+.opt-desc{font-size:11px;color:var(--muted);margin-top:2px;}
+.opt-check{width:22px;height:22px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;color:#000;transition:all .2s;}
+.option-chip-grid{display:flex;flex-wrap:wrap;gap:8px;}
+.option-chip{background:#fff;border:2px solid var(--border-dk);border-radius:20px;padding:8px 14px;cursor:pointer;font-size:13px;font-weight:700;color:var(--muted);transition:all .2s;user-select:none;box-shadow:0 3px 0 var(--border-dk);}
+.option-chip.selected{border-color:var(--green-dk);background:var(--green-lt);color:var(--green-dk);box-shadow:0 3px 0 var(--green-dk);}
+.quiz-next-btn{width:100%;background:var(--green);border:none;border-radius:16px;padding:16px;font-size:15px;font-weight:900;color:#fff;box-shadow:var(--shadow-green);cursor:pointer;font-family:inherit;margin-top:24px;letter-spacing:.02em;}
+.quiz-next-btn:disabled{opacity:.4;cursor:default;}
+
+/* ── LOADING SCREEN ── */
+#s-loading{background:var(--bg);align-items:center;justify-content:center;padding:32px;}
+.loading-planet{font-size:72px;animation:spin 2s linear infinite;}
+@keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
+.loading-title{font-size:20px;font-weight:900;margin-top:24px;margin-bottom:12px;color:var(--green-dk);}
+.loading-steps{display:flex;flex-direction:column;gap:8px;width:100%;max-width:280px;}
+.lstep{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);opacity:.4;transition:opacity .4s;}
+.lstep.done{opacity:1;color:var(--green);}
+.lstep.active{opacity:1;color:var(--blue);}
+
+/* ── MAIN APP ── */
+#s-app{background:var(--bg);}
+.app-header{background:#fff;padding:calc(env(safe-area-inset-top) + 10px) 16px 0;flex-shrink:0;border-bottom:1px solid var(--border);}
+.hrow1{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.user-greeting{font-size:13px;font-weight:700;color:var(--muted);}
+.level-pill{display:flex;align-items:center;gap:5px;background:var(--purple-lt);border:2px solid var(--purple-dk);border-radius:20px;padding:4px 10px;cursor:pointer;}
+.level-pill span:last-child{font-size:11px;font-weight:800;color:var(--purple-dk);}
+.score-row{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:10px;}
+.score-block{display:flex;align-items:baseline;gap:3px;}
+.score-num{font-size:52px;font-weight:900;line-height:1;transition:color .4s;}
+.score-denom{font-size:13px;font-weight:700;color:var(--muted);}
+.badges-col{display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
+.rbadge{border-radius:10px;padding:4px 9px;font-size:10px;font-weight:800;border:1px solid;white-space:nowrap;}
+.prog-track{height:16px;background:var(--border);border-radius:10px;overflow:hidden;margin-bottom:4px;border:2px solid var(--border-dk);}
+.prog-fill{height:100%;border-radius:8px;transition:width .6s cubic-bezier(.34,1.56,.64,1);position:relative;}
+.mstone-row{display:flex;justify-content:space-between;margin-bottom:8px;}
+.mstone{font-size:9px;font-weight:700;transition:color .3s;color:var(--dim);}
+.mstone.hit{color:var(--green);}
+.xp-row{display:flex;align-items:center;gap:6px;margin-bottom:8px;}
+.xp-track{flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden;}
+.xp-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--purple),var(--blue));transition:width .5s;}
+.xp-lbl{font-size:9px;font-weight:700;color:var(--purple);white-space:nowrap;}
+
+/* TABS */
+.tabs{display:flex;background:#fff;border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{background:none;border:none;font-size:11px;font-weight:700;padding:9px 10px;cursor:pointer;border-bottom:2px solid transparent;font-family:inherit;color:var(--muted);white-space:nowrap;flex-shrink:0;transition:all .2s;}
+.tab.active{color:var(--green);border-bottom-color:var(--green);}
+
+/* CONTENT */
+.content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.content::-webkit-scrollbar{display:none;}
+.page{padding:14px;display:none;}
+.page.active{display:block;}
+
+/* QUOTE CARD */
+.quote-card{background:#fff;border:2px solid var(--border-dk);border-radius:18px;padding:16px;margin-bottom:14px;position:relative;overflow:hidden;box-shadow:0 4px 0 var(--border-dk);}
+.quote-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--grad2);border-radius:18px 18px 0 0;}
+.quote-text{font-size:13px;font-weight:500;color:var(--text);line-height:1.7;padding-right:28px;}
+.quote-author{font-size:11px;color:var(--muted);margin-top:6px;font-weight:700;}
+.quote-ico{position:absolute;right:14px;top:14px;font-size:22px;opacity:.5;}
+
+/* CAT */
+.cat{margin-bottom:18px;}
+.cat-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.cat-left{display:flex;align-items:center;gap:8px;}
+.cat-icon-box{width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;border:2px solid;}
+.cat-name{font-size:14px;font-weight:900;color:var(--text);}
+.cat-score-pill{border-radius:20px;padding:4px 10px;font-size:11px;font-weight:800;border:2px solid;}
+
+/* TASK CARDS */
+.task-card{background:#fff;border:2px solid var(--border-dk);border-radius:16px;margin-bottom:10px;cursor:pointer;user-select:none;transition:transform .1s,box-shadow .1s;overflow:hidden;position:relative;box-shadow:0 4px 0 var(--border-dk);}
+.task-card::before{content:'';display:none;}
+.task-card.done::before{opacity:1;}
+.task-card:active{transform:translateY(2px);box-shadow:0 2px 0 var(--border-dk)!important;}
+.task-inner{display:flex;align-items:center;padding:12px 13px;gap:10px;}
+.t-circle{width:28px;height:28px;border-radius:50%;border:3px solid var(--border-dk);background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .25s;font-size:13px;color:#fff;}
+.task-card.done .t-circle{border-color:var(--tc-dk);background:var(--tc);}
+.t-label{flex:1;font-size:12px;font-weight:600;color:var(--muted);transition:color .2s;line-height:1.4;}
+.task-card.done .t-label{color:var(--text);}
+.t-pts{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:3px 7px;font-size:10px;font-weight:800;color:var(--dim);flex-shrink:0;transition:all .2s;}
+.task-card.done .t-pts{background:var(--tc-lt);border-color:var(--tc);color:var(--tc);}
+
+/* TIERED */
+.tiered-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;margin-bottom:8px;overflow:hidden;position:relative;}
+.tiered-card::before{content:'';display:none;}
+.tiered-card.done::before{opacity:1;}
+.tiered-lbl{padding:11px 13px 7px;font-size:12px;font-weight:700;color:var(--muted);}
+.tiered-card.done .tiered-lbl{color:var(--text);}
+.tier-opts{display:flex;gap:5px;padding:0 11px 11px;flex-wrap:wrap;}
+.tier-opt{flex:1;min-width:0;background:#fff;border:2px solid var(--border-dk);border-radius:10px;padding:7px 4px;text-align:center;cursor:pointer;font-family:inherit;font-size:10px;font-weight:700;color:var(--muted);transition:all .15s;line-height:1.3;box-shadow:0 3px 0 var(--border-dk);}
+.tier-opt.active{color:#fff;border-color:var(--tc);background:var(--tc);box-shadow:0 3px 0 var(--tc-dk);}
+
+/* DAILY INPUT */
+.input-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;margin-bottom:8px;overflow:hidden;position:relative;}
+.input-card::before{content:'';display:none;}
+.input-card.done::before{opacity:1;}
+.input-top{display:flex;align-items:center;padding:11px 13px 7px;gap:9px;}
+.input-circle{width:28px;height:28px;border-radius:50%;border:3px solid var(--border-dk);background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;color:#fff;transition:all .25s;}
+.input-card.done .input-circle{border-color:var(--tc-dk);background:var(--tc);}
+.input-lbl{flex:1;font-size:12px;font-weight:700;color:var(--muted);}
+.input-card.done .input-lbl{color:var(--text);}
+.input-pts{font-size:11px;font-weight:800;color:var(--dim);}
+.input-card.done .input-pts{color:var(--tc);}
+.input-row{display:flex;gap:7px;padding:0 11px 9px;align-items:center;}
+.mins-inp{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:8px 10px;color:var(--text);font-size:14px;font-weight:700;font-family:inherit;-webkit-appearance:none;text-align:center;outline:none;transition:border-color .2s;}
+.mins-inp:focus{border-color:var(--tc);}
+.mini-prog{height:5px;background:var(--bg3);border-radius:3px;margin:0 11px 7px;}
+.mini-fill{height:100%;border-radius:3px;transition:width .4s;}
+.tiers-hint{font-size:10px;font-weight:600;color:var(--dim);padding:0 11px 9px;}
+
+/* ACHIEVEMENTS */
+.ach-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;}
+.ach-card{background:#fff;border:2px solid var(--border-dk);border-radius:16px;padding:12px 8px;text-align:center;transition:all .3s;position:relative;overflow:hidden;box-shadow:0 3px 0 var(--border-dk);}
+.ach-card.unlocked{border-color:var(--gold-dk);background:var(--gold-lt);box-shadow:0 3px 0 var(--gold-dk);}
+.ach-card.unlocked::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold),var(--purple));border-radius:14px 14px 0 0;}
+.ach-ico{font-size:26px;margin-bottom:5px;filter:grayscale(1);opacity:.3;transition:all .3s;}
+.ach-card.unlocked .ach-ico{filter:none;opacity:1;}
+.ach-name{font-size:10px;font-weight:800;color:var(--dim);}
+.ach-card.unlocked .ach-name{color:var(--gold-dk);}
+.ach-desc{font-size:9px;color:var(--dim);margin-top:2px;}
+
+/* SHOP */
+.shop-bal-card{background:var(--bg2);border:1px solid var(--gold);border-radius:18px;padding:16px;margin-bottom:14px;position:relative;overflow:hidden;}
+.shop-bal-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--grad3);}
+.shop-bal-num{font-size:36px;font-weight:900;color:#fff;}
+.shop-bal-lbl{font-size:11px;color:rgba(255,255,255,.8);font-weight:700;margin-bottom:4px;}
+.shop-item-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:9px;}
+.shop-item-name{flex:1;font-size:13px;font-weight:700;color:var(--text);}
+.shop-item-cost{font-size:12px;font-weight:800;color:var(--gold);}
+.redeem-btn{background:var(--green);border:none;border-radius:10px;padding:8px 14px;font-size:11px;font-weight:800;color:#fff;box-shadow:0 3px 0 var(--green-dk);cursor:pointer;font-family:inherit;flex-shrink:0;transition:opacity .2s;}
+.redeem-btn:disabled{background:var(--border);color:var(--dim);cursor:default;box-shadow:none;}
+.shop-add-wrap{background:#fff;border:2px solid var(--border-dk);border-radius:14px;padding:12px;margin-bottom:14px;}
+.shop-add-title{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px;}
+.shop-inp-row{display:flex;gap:6px;flex-wrap:wrap;}
+.shop-inp{flex:1;min-width:110px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:9px 11px;color:var(--text);font-size:12px;font-weight:600;font-family:inherit;outline:none;}
+.shop-cost-inp{width:72px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:9px 11px;color:var(--text);font-size:12px;font-weight:600;font-family:inherit;outline:none;}
+.shop-add-btn{background:var(--green);border:none;border-radius:10px;padding:9px 14px;font-size:12px;font-weight:800;color:#fff;cursor:pointer;font-family:inherit;box-shadow:var(--shadow-green);}
+
+/* STATS */
+.stat-card{background:#fff;border:2px solid var(--border-dk);border-radius:18px;padding:14px;margin-bottom:10px;box-shadow:0 4px 0 var(--border-dk);}
+.stat-ttl{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;}
+.stat-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;}
+.stat-lbl{font-size:12px;color:var(--muted);font-weight:600;}
+.stat-val{font-size:12px;font-weight:800;color:var(--text);}
+.bar-row{display:flex;align-items:center;gap:6px;margin-bottom:5px;}
+.bar-day{font-size:9px;font-weight:700;color:var(--muted);width:36px;flex-shrink:0;}
+.bar-track{flex:1;height:14px;background:var(--bg3);border-radius:4px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:4px;transition:width .5s;display:flex;align-items:center;padding-left:5px;}
+.bar-lbl{font-size:9px;font-weight:800;color:#fff;}
+.hist-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.hist-cell{aspect-ratio:1;border-radius:6px;background:var(--bg2);border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:var(--dim);}
+.hist-cell.today{border-color:var(--blue);}
+.hist-s{font-size:7px;font-weight:800;margin-top:1px;}
+.legend{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.leg-item{display:flex;align-items:center;gap:4px;font-size:10px;font-weight:600;color:var(--muted);}
+.leg-dot{width:9px;height:9px;border-radius:2px;}
+
+/* RANK */
+.room-card{background:#fff;border:2px solid var(--border-dk);border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:0 4px 0 var(--border-dk);}
+.room-title{font-size:14px;font-weight:800;color:var(--text);margin-bottom:4px;}
+.room-sub{font-size:11px;color:var(--muted);margin-bottom:12px;}
+.room-inp{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:11px 13px;color:var(--text);font-size:14px;font-weight:700;font-family:inherit;outline:none;margin-bottom:8px;text-align:center;letter-spacing:.08em;}
+.room-inp:focus{border-color:var(--blue);}
+.rank-item{background:#fff;border:2px solid var(--border-dk);border-radius:16px;padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;box-shadow:0 4px 0 var(--border-dk);}
+.rank-medal{font-size:22px;width:32px;text-align:center;flex-shrink:0;}
+.rank-name{font-size:14px;font-weight:800;color:var(--text);}
+.rank-sub{font-size:10px;color:var(--muted);font-weight:600;margin-top:2px;}
+.rank-score{font-size:22px;font-weight:900;}
+
+/* NAV */
+.bottom-nav{display:flex;background:#fff;border-top:1px solid var(--border);flex-shrink:0;overflow-x:auto;}
+.bottom-nav::-webkit-scrollbar{display:none;}
+.nav-btn{flex:1;background:none;border:none;padding:9px 2px 7px;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;font-family:inherit;min-width:52px;}
+.nav-ico{font-size:18px;transition:transform .2s;}
+.nav-lbl{font-size:8px;font-weight:700;color:var(--dim);letter-spacing:.02em;}
+.nav-btn.active .nav-lbl{color:var(--green);}
+.nav-btn.active .nav-ico{transform:scale(1.2);}
+
+/* CELEBRATE */
+.cel{position:fixed;top:0;left:0;right:0;bottom:0;z-index:999;pointer-events:none;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);}
+.cel-box{background:#fff;border:3px solid var(--green);box-shadow:0 8px 0 var(--green-dk);border-radius:24px;padding:28px 32px;text-align:center;transform:scale(0);transition:transform .45s cubic-bezier(.34,1.56,.64,1);}
+.cel-box.show{transform:scale(1);}
+.cel-emoji{font-size:52px;display:block;margin-bottom:10px;}
+.cel-text{font-size:17px;font-weight:900;color:var(--green-dk);}
+.cel-sub{font-size:12px;color:var(--muted);margin-top:5px;font-weight:600;}
+.confetti{position:fixed;width:8px;height:8px;border-radius:2px;pointer-events:none;z-index:1000;animation:fall 1.5s ease-in forwards;}
+@keyframes fall{0%{transform:translateY(-20px) rotate(0deg);opacity:1;}100%{transform:translateY(100vh) rotate(720deg);opacity:0;}}
+.toast{position:fixed;bottom:86px;left:50%;transform:translateX(-50%) translateY(14px);background:var(--text);border-radius:20px;padding:10px 18px;font-size:12px;font-weight:800;color:#fff;opacity:0;transition:all .3s;z-index:998;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.sect-ttl{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;}
+</style>
+</head>
+<body>
+<div class="safe-top"></div>
+
+<!-- WELCOME -->
+<div class="screen" id="s-welcome">
+  <div class="welcome-bg"></div>
+  <div class="planet">🪐</div>
+  <div class="app-name">自律星球</div>
+  <div class="app-sub">回答几个问题<br>AI 为你生成专属打卡系统</div>
+  <button class="start-btn" onclick="startQuiz()">开始定制我的系统 →</button>
+  <div class="login-hint" onclick="tryLogin()">已有账号？继续上次的</div>
+</div>
+
+<!-- QUIZ -->
+<div class="screen hidden" id="s-quiz">
+  <div class="quiz-header">
+    <div class="quiz-progress">
+      <button class="quiz-back" onclick="quizBack()">←</button>
+      <div class="prog-dots" id="progDots"></div>
+    </div>
+  </div>
+  <div class="quiz-scroll">
+    <!-- Q1: Name -->
+    <div class="q-step active" id="q1">
+      <div class="q-emoji">👋</div>
+      <div class="q-title">你好！先告诉我你的名字</div>
+      <div class="q-sub">我会用它来为你生成专属系统</div>
+      <input class="name-inp" id="nameInp" placeholder="输入你的名字…" maxlength="10" oninput="checkQ1()">
+      <button class="quiz-next-btn" id="q1next" disabled onclick="quizNext(1)">继续 →</button>
+    </div>
+    <!-- Q2: Goals -->
+    <div class="q-step" id="q2">
+      <div class="q-emoji">🎯</div>
+      <div class="q-title">你最想改变哪些方面？</div>
+      <div class="q-sub">可以多选，AI 会据此生成专属任务</div>
+      <div class="option-chip-grid" id="goalsGrid"></div>
+      <button class="quiz-next-btn" id="q2next" disabled onclick="quizNext(2)">继续 →</button>
+    </div>
+    <!-- Q3: Life status (multi-select) -->
+    <div class="q-step" id="q3">
+      <div class="q-emoji">🌍</div>
+      <div class="q-title">你现在的生活状态？</div>
+      <div class="q-sub">可以多选，比如同时是上班族和备考生</div>
+      <div class="option-chip-grid" id="statusGrid"></div>
+      <button class="quiz-next-btn" id="q3next" disabled onclick="quizNext(3)">继续 →</button>
+    </div>
+    <!-- Q4: Study detail (动态显示) -->
+    <div class="q-step" id="q4">
+      <div class="q-emoji">📚</div>
+      <div class="q-title">告诉我你的学习目标</div>
+      <div class="q-sub">越详细，AI 生成的任务越精准</div>
+      <div style="margin-bottom:12px;">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;">你在备考或学习什么？（可多选）</div>
+        <div class="option-chip-grid" id="studyTargetGrid"></div>
+      </div>
+      <div id="studyOtherWrap" style="display:none;margin-bottom:12px;">
+        <input class="name-inp" id="studyOtherInp" placeholder="请说明你在学什么…" maxlength="30">
+      </div>
+      <div style="margin-bottom:12px;">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;">每天计划学习多久？</div>
+        <div class="option-chip-grid" id="studyTimeGrid"></div>
+      </div>
+      <button class="quiz-next-btn" id="q4next" disabled onclick="quizNext(4)">继续 →</button>
+    </div>
+    <!-- Q5: Health detail (动态显示) -->
+    <div class="q-step" id="q5">
+      <div class="q-emoji">🥗</div>
+      <div class="q-title">你的健康饮食目标</div>
+      <div class="q-sub">帮助 AI 生成更贴合你身体的任务</div>
+      <div style="margin-bottom:12px;">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;">有特殊饮食需求吗？（可多选）</div>
+        <div class="option-chip-grid" id="dietNeedGrid"></div>
+      </div>
+      <button class="quiz-next-btn" id="q5next" onclick="quizNext(5)">继续 →</button>
+    </div>
+    <!-- Q6: Exercise detail (动态显示) -->
+    <div class="q-step" id="q6">
+      <div class="q-emoji">💪</div>
+      <div class="q-title">你做什么运动？</div>
+      <div class="q-sub">AI 会生成专属于你的运动任务</div>
+      <div style="margin-bottom:12px;">
+        <div class="option-chip-grid" id="exerciseGrid"></div>
+      </div>
+      <div style="margin-bottom:12px;">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;">每周计划几次？</div>
+        <div class="option-chip-grid" id="exerciseFreqGrid"></div>
+      </div>
+      <button class="quiz-next-btn" id="q6next" onclick="quizNext(6)">继续 →</button>
+    </div>
+    <!-- Q7: Time -->
+    <div class="q-step" id="q7">
+      <div class="q-emoji">⏰</div>
+      <div class="q-title">每天能投入多少时间打卡？</div>
+      <div class="q-sub">设定合理目标，才能持续坚持</div>
+      <div class="option-grid" id="timeGrid"></div>
+      <button class="quiz-next-btn" id="q7next" disabled onclick="quizNext(7)">继续 →</button>
+    </div>
+    <!-- Q8: Pain -->
+    <div class="q-step" id="q8">
+      <div class="q-emoji">💭</div>
+      <div class="q-title">过去自律失败，主要因为？</div>
+      <div class="q-sub">AI 会针对性设计解决方案</div>
+      <div class="option-chip-grid" id="painGrid"></div>
+      <button class="quiz-next-btn" id="q8next" disabled onclick="generateSystem()">生成我的专属系统 ✨</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div class="screen hidden" id="s-loading">
+  <div class="loading-planet">🪐</div>
+  <div class="loading-title">AI 正在为你定制中…</div>
+  <div class="loading-steps" id="loadingSteps">
+    <div class="lstep" id="ls1">🔍 分析你的目标和生活状态</div>
+    <div class="lstep" id="ls2">⚖️ 计算最优分值权重</div>
+    <div class="lstep" id="ls3">✍️ 生成个性化任务清单</div>
+    <div class="lstep" id="ls4">🎁 配置奖励和成就系统</div>
+    <div class="lstep" id="ls5">✅ 完成！</div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div class="screen hidden" id="s-app">
+  <div class="app-header">
+    <div class="hrow1">
+      <div class="user-greeting" id="userGreeting">早上好！</div>
+      <div class="level-pill" onclick="switchTab('achievements')">
+        <span id="lvIco">🌱</span><span id="lvTxt">Lv.0 新苗</span>
+      </div>
+    </div>
+    <div class="score-row">
+      <div class="score-block"><div class="score-num" id="scoreNum">0</div><div class="score-denom">/100</div></div>
+      <div class="badges-col" id="badgesCol"></div>
+    </div>
+    <div class="prog-track"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+    <div class="mstone-row">
+      <div class="mstone" id="m80">80分</div>
+      <div class="mstone" id="m90">90分</div>
+      <div class="mstone" id="m100">100分</div>
+    </div>
+    <div class="xp-row"><div class="xp-track"><div class="xp-fill" id="xpFill" style="width:0%"></div></div><div class="xp-lbl" id="xpLbl">⭐ 0 xp</div></div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('today')">今日打卡</button>
+    <button class="tab" onclick="switchTab('achievements')">成就</button>
+    <button class="tab" onclick="switchTab('shop')">奖励</button>
+    <button class="tab" onclick="switchTab('rank')">好友排名</button>
+    <button class="tab" onclick="switchTab('stats')">统计</button>
+    <button class="tab" onclick="switchTab('settings')">设置</button>
+  </div>
+  <div class="content">
+    <div class="page active" id="page-today">
+      <div class="quote-card"><div class="quote-text" id="quoteText"></div><div class="quote-author" id="quoteAuthor"></div><div class="quote-ico" id="quoteIco"></div></div>
+    </div>
+    <div class="page" id="page-achievements">
+      <div class="sect-ttl" id="achProg"></div>
+      <div class="ach-grid" id="achGrid"></div>
+    </div>
+    <div class="page" id="page-shop">
+      <div class="shop-bal-card">
+        <div class="shop-bal-lbl">可用积分</div>
+        <div class="shop-bal-num" id="shopBal">0</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;">每完成一项任务积累积分，兑换你喜欢的奖励</div>
+      </div>
+      <div class="shop-add-wrap">
+        <div class="shop-add-title">+ 添加自定义奖励</div>
+        <div class="shop-inp-row">
+          <input class="shop-inp" id="shopNameInp" placeholder="奖励名称（如：喝杯奶茶）">
+          <input class="shop-cost-inp" type="number" id="shopCostInp" placeholder="积分">
+          <button class="shop-add-btn" onclick="addShopItem()">添加</button>
+        </div>
+      </div>
+      <div class="sect-ttl">奖励列表</div>
+      <div id="shopList"></div>
+    </div>
+    <div class="page" id="page-rank">
+      <div class="room-card">
+        <div class="room-title">🏆 好友排名</div>
+        <div class="room-sub">输入同一个房间码，和朋友比拼今日得分</div>
+        <input class="room-inp" id="roomCodeInp" placeholder="房间码（如：FRIENDS）" maxlength="12">
+        <input class="room-inp" id="nickInp" placeholder="你的昵称" maxlength="10" style="margin-top:0;">
+        <button class="shop-add-btn" style="width:100%;padding:12px;font-size:13px;border-radius:12px;" onclick="joinRoom()">加入房间</button>
+        <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:8px;" id="roomStatus"></div>
+      </div>
+      <div id="rankList"></div>
+    </div>
+    <div class="page" id="page-stats">
+      <div class="stat-card" id="statsOverview"></div>
+      <div class="stat-card"><div class="stat-ttl">最近 7 天</div><div id="barChart"></div></div>
+      <div style="font-size:10px;font-weight:700;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em;">最近 30 天</div>
+      <div class="hist-grid" id="histGrid"></div>
+      <div class="legend">
+        <div class="leg-item"><div class="leg-dot" style="background:var(--gold)"></div>100分</div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--purple)"></div>90+</div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--green)"></div>80+</div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--red)"></div>未达标</div>
+      </div>
+    </div>
+    <div class="page" id="page-settings">
+      <div class="stat-card" style="margin-bottom:12px;">
+        <div class="stat-ttl">账号</div>
+        <div class="stat-row"><span class="stat-lbl">👤 昵称</span><span class="stat-val" id="settingsName">-</span></div>
+        <div class="stat-row"><span class="stat-lbl">⭐ 累计经验</span><span class="stat-val" id="settingsXP">0 xp</span></div>
+        <div class="stat-row"><span class="stat-lbl">🎯 积分余额</span><span class="stat-val" id="settingsPts">0 pts</span></div>
+        <div class="stat-row"><span class="stat-lbl">📋 打卡系统总分</span><span class="stat-val" id="settingsDesign">-</span></div>
+      </div>
+      <div class="stat-card" style="margin-bottom:12px;">
+        <div class="stat-ttl">打卡系统</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6;">重新回答问卷，让 AI 为你生成全新的专属打卡系统。原有的历史记录和积分会被清除。</div>
+        <button onclick="confirmReset()" style="width:100%;background:var(--red);border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;font-family:inherit;">🔄 重新生成我的系统</button>
+      </div>
+      <div class="stat-card">
+        <div class="stat-ttl">数据</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6;">只清除今日打卡记录，保留历史数据和积分。</div>
+        <button onclick="resetToday()" style="width:100%;background:var(--border);border:none;border-radius:12px;padding:13px;font-size:13px;font-weight:800;color:var(--muted);cursor:pointer;font-family:inherit;margin-bottom:8px;">🗑️ 清除今日打卡</button>
+        <div style="font-size:11px;color:var(--dim);text-align:center;">版本 MVP 1.0 · 自律星球 🪐</div>
+      </div>
+    </div>
+  </div>
+  <div class="bottom-nav">
+    <button class="nav-btn active" id="nav-today" onclick="switchTab('today')"><div class="nav-ico">✅</div><div class="nav-lbl">打卡</div></button>
+    <button class="nav-btn" id="nav-achievements" onclick="switchTab('achievements')"><div class="nav-ico">🎖️</div><div class="nav-lbl">成就</div></button>
+    <button class="nav-btn" id="nav-shop" onclick="switchTab('shop')"><div class="nav-ico">🎁</div><div class="nav-lbl">奖励</div></button>
+    <button class="nav-btn" id="nav-rank" onclick="switchTab('rank')"><div class="nav-ico">🏆</div><div class="nav-lbl">排名</div></button>
+    <button class="nav-btn" id="nav-stats" onclick="switchTab('stats')"><div class="nav-ico">📈</div><div class="nav-lbl">统计</div></button>
+    <button class="nav-btn" id="nav-settings" onclick="switchTab('settings')"><div class="nav-ico">⚙️</div><div class="nav-lbl">设置</div></button>
+  </div>
+</div>
+
+<div class="safe-bottom"></div>
+<div class="cel" id="cel" style="display:none;"><div class="cel-box" id="celBox"><span class="cel-emoji" id="celEmoji">🎉</span><div class="cel-text" id="celText"></div><div class="cel-sub" id="celSub"></div></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ── QUIZ DATA ────────────────────────────────────────
+const GOALS=[
+  {id:'study',label:'学习提升',desc:'考试备考、读书、技能学习'},
+  {id:'sleep',label:'作息改善',desc:'早睡早起、规律休息'},
+  {id:'diet',label:'饮食健康',desc:'吃早饭、控制饮食、多喝水'},
+  {id:'exercise',label:'运动锻炼',desc:'跑步、健身、瑜伽、普拉提'},
+  {id:'mental',label:'心理健康',desc:'减少内耗、专注、情绪管理'},
+  {id:'work',label:'工作效率',desc:'高效完成任务、减少拖延'},
+  {id:'finance',label:'财务管理',desc:'记账、储蓄、控制消费'},
+  {id:'social',label:'人际关系',desc:'联系家人、维护友谊'},
+];
+const STATUSES=[
+  {id:'student',label:'备考学生',desc:'正在准备重要考试',ico:'📚'},
+  {id:'worker',label:'上班族',desc:'朝九晚五的工作节奏',ico:'💼'},
+  {id:'freelance',label:'自由职业',desc:'灵活安排时间',ico:'🏠'},
+  {id:'parent',label:'全职父母/备孕',desc:'家庭优先',ico:'👶'},
+  {id:'other',label:'其他',desc:'我的情况比较特殊',ico:'✨'},
+];
+const TIMES=[
+  {id:'15min',label:'15分钟以内',desc:'只要能做，哪怕一点点',ico:'⚡'},
+  {id:'30min',label:'30分钟左右',desc:'每天抽出半小时',ico:'🕐'},
+  {id:'1hour',label:'1小时左右',desc:'有一定时间投入',ico:'🕑'},
+  {id:'2hour',label:'2小时以上',desc:'认真改变，大量投入',ico:'🔥'},
+];
+const PAINS=[
+  {id:'boring',label:'太无聊坚持不住'},
+  {id:'forget',label:'忘记打卡'},
+  {id:'hard',label:'目标设得太难'},
+  {id:'noReward',label:'没有成就感'},
+  {id:'alone',label:'一个人没动力'},
+  {id:'busy',label:'太忙没时间'},
+  {id:'lazy',label:'就是懒'},
+  {id:'anxiety',label:'焦虑内耗'},
+];
+
+// ── QUOTES ───────────────────────────────────────────
+const QUOTES=[
+  {q:"你今天的努力，是明天好运的种子。",a:"— 鲁迅",ico:"🌱"},
+  {q:"哪里有坚持，哪里就有成功。",a:"— 本杰明·富兰克林",ico:"🔥"},
+  {q:"把每一个平凡的日子，活成不平凡的时光。",a:"— 木心",ico:"✨"},
+  {q:"种一棵树最好的时间是十年前，其次是现在。",a:"— 非洲谚语",ico:"🌳"},
+  {q:"不要等待机会，而要创造机会。",a:"— 林肯",ico:"🚀"},
+  {q:"你所浪费的今天，是昨天死去的人奢望的明天。",a:"— 马克·吐温",ico:"⏰"},
+  {q:"慢慢来，比较快。",a:"— 几米",ico:"🐢"},
+  {q:"每一个不曾起舞的日子，都是对生命的辜负。",a:"— 尼采",ico:"💃"},
+  {q:"坚持本身，就是一种才华。",a:"— 佚名",ico:"🏅"},
+  {q:"生命不是要超越别人，而是要超越自己。",a:"— 奥普拉·温弗瑞",ico:"⭐"},
+  {q:"我从不相信懒洋洋的自由，我向往的自由是通过勤奋实现的。",a:"— 王小波",ico:"💪"},
+  {q:"一个人敢于直面自己的弱点，才能真正地成长。",a:"— 村上春树",ico:"🌊"},
+];
+
+const LEVELS=[{min:0,n:"新苗",i:"🌱"},{min:100,n:"破土",i:"🌿"},{min:300,n:"生长",i:"🌳"},{min:600,n:"开花",i:"🌸"},{min:1000,n:"结果",i:"🍎"},{min:1500,n:"丰收",i:"🌾"},{min:2500,n:"参天",i:"🏔️"},{min:4000,n:"传奇",i:"⭐"}];
+
+const EMOJI_MAP=[['咖啡','☕'],['电影','🎬'],['剧','📺'],['食物','🍜'],['吃','🍜'],['蛋糕','🎂'],['护肤','💆'],['面膜','🧖'],['购物','🛍'],['买','🛍'],['书','📚'],['音乐','🎵'],['游戏','🎮'],['旅游','✈️'],['按摩','💆'],['健身','💪'],['甜品','🍰'],['奶茶','🧋'],['运动','🏃'],['睡觉','😴'],['休息','😌'],['电话','📱'],['朋友','👫'],['聚餐','🍽️']];
+function guessEmoji(name){for(const[k,e]of EMOJI_MAP)if(name.includes(k))return e;return'🎁';}
+
+// ── QUIZ STATE ───────────────────────────────────────
+// quizStep and quizData now defined in QUIZ section
+
+// ── MAIN STATE ───────────────────────────────────────
+function todayKey(){return new Date().toISOString().slice(0,10);}
+let userName=localStorage.getItem('user_name')||'';
+let cats=JSON.parse(localStorage.getItem('user_cats')||'null');
+let checks=JSON.parse(localStorage.getItem('checks_'+todayKey())||'{}');
+let history=JSON.parse(localStorage.getItem('score_history')||'{}');
+let totalXP=parseInt(localStorage.getItem('total_xp')||'0');
+let totalPoints=parseInt(localStorage.getItem('total_points')||'0');
+let shopItems=JSON.parse(localStorage.getItem('shop_items')||'null');
+let unlockedAch=JSON.parse(localStorage.getItem('unlocked_ach')||'[]');
+let roomCode=localStorage.getItem('room_code')||'';
+let nickName=localStorage.getItem('nick_name')||'';
+let prevScore=0;
+
+function save(){
+  localStorage.setItem('checks_'+todayKey(),JSON.stringify(checks));
+  localStorage.setItem('score_history',JSON.stringify(history));
+  localStorage.setItem('total_xp',totalXP);
+  localStorage.setItem('total_points',totalPoints);
+  if(cats)localStorage.setItem('user_cats',JSON.stringify(cats));
+  if(shopItems)localStorage.setItem('shop_items',JSON.stringify(shopItems));
+}
+function saveAch(){localStorage.setItem('unlocked_ach',JSON.stringify(unlockedAch));}
+
+// ── SCREEN NAV ───────────────────────────────────────
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>{
+    if(s.id===id){s.classList.remove('hidden','out');}
+    else if(!s.classList.contains('hidden')){s.classList.add('out');}
+  });
+}
+
+// ── QUIZ DATA EXTENDED ───────────────────────────────
+const STATUSES_NEW=[
+  {id:'worker',label:'上班族'},
+  {id:'student',label:'学生'},
+  {id:'exam',label:'备考中'},
+  {id:'freelance',label:'自由职业'},
+  {id:'parent',label:'全职父母'},
+  {id:'pregnant',label:'备孕/孕期'},
+  {id:'other',label:'其他'},
+];
+const STUDY_TARGETS=[
+  {id:'cpa',label:'CPA注册会计师'},
+  {id:'cfa',label:'CFA金融分析师'},
+  {id:'bar',label:'司法考试'},
+  {id:'gaokao',label:'高考'},
+  {id:'kaoyan',label:'考研'},
+  {id:'english',label:'英语（四六级/雅思/托福）'},
+  {id:'ai',label:'AI/编程技术'},
+  {id:'lang',label:'其他语言'},
+  {id:'skill',label:'职业技能'},
+  {id:'other',label:'其他'},
+];
+const STUDY_TIMES=[
+  {id:'30min',label:'30分钟'},
+  {id:'1h',label:'1小时'},
+  {id:'2h',label:'2小时'},
+  {id:'3h',label:'3小时以上'},
+];
+const DIET_NEEDS=[
+  {id:'breakfast',label:'养成吃早饭'},
+  {id:'pregnant',label:'备孕调理'},
+  {id:'spleen',label:'脾胃虚弱调理'},
+  {id:'eczema',label:'湿疹/皮肤问题'},
+  {id:'lose',label:'减重控卡'},
+  {id:'water',label:'多喝水'},
+  {id:'noJunk',label:'戒油腻/辛辣'},
+  {id:'none',label:'无特殊需求'},
+];
+const EXERCISES=[
+  {id:'pilates',label:'普拉提'},
+  {id:'yoga',label:'瑜伽'},
+  {id:'run',label:'跑步'},
+  {id:'gym',label:'健身房'},
+  {id:'swim',label:'游泳'},
+  {id:'walk',label:'步行'},
+  {id:'dance',label:'舞蹈'},
+  {id:'other',label:'其他'},
+];
+const EXERCISE_FREQS=[
+  {id:'1x',label:'每周1次'},
+  {id:'2x',label:'每周2次'},
+  {id:'3x',label:'每周3次'},
+  {id:'5x',label:'每周5次以上'},
+];
+
+// ── QUIZ ─────────────────────────────────────────────
+// Dynamic step order based on selected goals
+const TOTAL_STEPS=8;
+let quizStep=1;
+const quizData={name:'',goals:[],statuses:[],studyTargets:[],studyOther:'',studyTime:'',dietNeeds:[],exercises:[],exerciseFreq:'',time:'',pains:[]};
+
+function startQuiz(){
+  showScreen('s-quiz');
+  buildQuizOptions();
+  renderProgDots();
+}
+function tryLogin(){
+  if(userName&&cats){initApp();}
+  else{showToast('没有找到已有数据，请重新开始');}
+}
+
+function makeChips(items, gridId, dataKey, nextBtnId, minSel=1){
+  const grid=document.getElementById(gridId);grid.innerHTML='';
+  items.forEach(item=>{
+    const el=document.createElement('div');el.className='option-chip';el.textContent=item.label;
+    el.onclick=()=>{
+      el.classList.toggle('selected');
+      quizData[dataKey]=Array.from(grid.querySelectorAll('.option-chip.selected')).map(e=>items.find(x=>x.label===e.textContent)?.id||e.textContent);
+      if(nextBtnId)document.getElementById(nextBtnId).disabled=quizData[dataKey].length<minSel;
+      if(gridId==='studyTargetGrid'){document.getElementById('studyOtherWrap').style.display=quizData.studyTargets.includes('other')?'block':'none';}
+    };
+    grid.appendChild(el);
+  });
+}
+function makeCards(items, gridId, dataKey, nextBtnId){
+  const grid=document.getElementById(gridId);grid.innerHTML='';
+  items.forEach(item=>{
+    const el=document.createElement('div');el.className='option-card';
+    el.innerHTML=`<div class="opt-emoji">${item.ico||'•'}</div><div class="opt-text"><div class="opt-label">${item.label}</div>${item.desc?`<div class="opt-desc">${item.desc}</div>`:''}</div><div class="opt-check"></div>`;
+    el.onclick=()=>{
+      grid.querySelectorAll('.option-card').forEach(x=>x.classList.remove('selected'));
+      el.classList.add('selected');quizData[dataKey]=item.id;
+      if(nextBtnId)document.getElementById(nextBtnId).disabled=false;
+    };
+    grid.appendChild(el);
+  });
+}
+
+function buildQuizOptions(){
+  // Q2: Goals
+  makeChips(GOALS,'goalsGrid','goals','q2next');
+  // Q3: Status (multi)
+  makeChips(STATUSES_NEW,'statusGrid','statuses','q3next');
+  // Q4: Study targets + time
+  makeChips(STUDY_TARGETS,'studyTargetGrid','studyTargets',null,0);
+  makeChips(STUDY_TIMES,'studyTimeGrid','studyTime',null,0);
+  document.getElementById('q4next').disabled=false; // optional step
+  // Q5: Diet
+  makeChips(DIET_NEEDS,'dietNeedGrid','dietNeeds',null,0);
+  // Q6: Exercise
+  makeChips(EXERCISES,'exerciseGrid','exercises',null,0);
+  makeChips(EXERCISE_FREQS,'exerciseFreqGrid','exerciseFreq',null,0);
+  // Q7: Time
+  makeCards(TIMES,'timeGrid','time','q7next');
+  // Q8: Pain
+  makeChips(PAINS,'painGrid','pains','q8next');
+}
+
+// Which steps to show based on goals
+function getStepOrder(){
+  const steps=[1,2,3]; // always: name, goals, status
+  if(quizData.goals.includes('study'))steps.push(4);
+  if(quizData.goals.includes('diet'))steps.push(5);
+  if(quizData.goals.includes('exercise'))steps.push(6);
+  steps.push(7,8); // always: time, pain
+  return steps;
+}
+
+function renderProgDots(){
+  const order=getStepOrder();
+  const c=document.getElementById('progDots');c.innerHTML='';
+  const pos=order.indexOf(quizStep);
+  order.forEach((s,i)=>{
+    const d=document.createElement('div');
+    d.className='pdot'+(i<pos?' done':i===pos?' active':'');
+    c.appendChild(d);
+  });
+}
+
+function checkQ1(){const v=document.getElementById('nameInp').value.trim();document.getElementById('q1next').disabled=v.length<1;quizData.name=v;}
+
+function quizNext(step){
+  document.getElementById('q'+step).classList.remove('active');
+  // Find next step in order
+  const order=getStepOrder();
+  const cur=order.indexOf(step);
+  const next=order[cur+1];
+  if(!next){generateSystem();return;}
+  quizStep=next;
+  document.getElementById('q'+next).classList.add('active');
+  renderProgDots();
+  // Auto-skip: if study step but no study goal, skip
+  if(next===4&&!quizData.goals.includes('study'))quizNext(4);
+  if(next===5&&!quizData.goals.includes('diet'))quizNext(5);
+  if(next===6&&!quizData.goals.includes('exercise'))quizNext(6);
+}
+
+function quizBack(){
+  const order=getStepOrder();
+  const cur=order.indexOf(quizStep);
+  if(cur<=0){showScreen('s-welcome');return;}
+  document.getElementById('q'+quizStep).classList.remove('active');
+  quizStep=order[cur-1];
+  document.getElementById('q'+quizStep).classList.add('active');
+  renderProgDots();
+}
+
+// ── AI GENERATION ────────────────────────────────────
+async function generateSystem(){
+  quizData.name=document.getElementById('nameInp').value.trim();
+  showScreen('s-loading');
+  const steps=['ls1','ls2','ls3','ls4','ls5'];
+  let si=0;
+  const tick=setInterval(()=>{
+    if(si>0)document.getElementById(steps[si-1]).classList.remove('active');
+    if(si<steps.length){document.getElementById(steps[si]).classList.add('active','done');si++;}
+    else clearInterval(tick);
+  },600);
+
+  // Build detailed context from quiz answers
+  if(document.getElementById('studyOtherInp')) quizData.studyOther=document.getElementById('studyOtherInp').value.trim();
+  const studyDetail=quizData.studyTargets&&quizData.studyTargets.length>0
+    ? '备考/学习内容：'+quizData.studyTargets.map(id=>{const t=STUDY_TARGETS.find(x=>x.id===id);return t?t.label:id;}).join('、')+(quizData.studyOther?'（'+quizData.studyOther+'）':'')+'，每天计划：'+quizData.studyTime : '';
+  const dietDetail=quizData.dietNeeds&&quizData.dietNeeds.length>0
+    ? '饮食需求：'+quizData.dietNeeds.map(id=>{const t=DIET_NEEDS.find(x=>x.id===id);return t?t.label:id;}).join('、') : '';
+  const exerciseDetail=quizData.exercises&&quizData.exercises.length>0
+    ? '运动类型：'+quizData.exercises.map(id=>{const t=EXERCISES.find(x=>x.id===id);return t?t.label:id;}).join('、')+'，频率：'+quizData.exerciseFreq : '';
+  const statusDetail=quizData.statuses&&quizData.statuses.length>0
+    ? quizData.statuses.map(id=>{const t=STATUSES_NEW.find(x=>x.id===id);return t?t.label:id;}).join('、') : '';
+  const goalsDetail=quizData.goals.map(id=>GOALS.find(x=>x.id===id)?.label||id).join('、');
+  const painsDetail=quizData.pains.join('、');
+
+  const promptLines=[
+    '你是一个个人自律系统设计专家。根据用户详细信息，生成一套高度个性化的每日打卡系统，总分恰好100分。',
+    '',
+    '用户信息：',
+    '- 姓名：'+quizData.name,
+    '- 生活状态：'+statusDetail,
+    '- 想改变的方面：'+goalsDetail,
+    studyDetail?'- '+studyDetail:'',
+    dietDetail?'- '+dietDetail:'',
+    exerciseDetail?'- '+exerciseDetail:'',
+    '- 每天可投入时间：'+quizData.time,
+    '- 过去失败原因：'+painsDetail,
+    '',
+    '要求：',
+    '1. 生成4-6个类别，每个2-4个任务，任务描述非常具体（如"CPA学习 ≥ 2小时"，"完成一次普拉提"，不要写模糊描述）',
+    '2. 所有任务满分严格合计=100分，请仔细计算',
+    '3. 用户最关心的目标权重最高',
+    '4. 任务类型：check（完成/未完成）、tiered（3-4个档位，最高档pts=该任务满分）、daily_input（target分钟+maxPts满分）',
+    '5. daily_input的target分钟要符合用户填写的学习时间',
+    '6. 有备孕/脾胃/湿疹需求时，饮食任务具体体现（吃温热早饭、避免生冷油腻等）',
+    '7. 选了具体运动时，任务名用具体运动名',
+    '8. 生成4-5个奖励，贴合用户生活',
+    '',
+    '只返回JSON，不要任何解释或markdown：',
+    '{"greeting":"温暖欢迎语20字以内称名字提具体目标","defaultShopItems":[{"name":"带emoji奖励名","cost":积分}],"cats":[{"name":"类别名","icon":"emoji","color":"#颜色","tasks":[{"id":"英文id","label":"具体描述","type":"check","pts":数字},{"id":"英文id","label":"具体描述","type":"tiered","tiers":[{"label":"档位","pts":数字}]},{"id":"英文id","label":"具体描述","type":"daily_input","target":分钟,"maxPts":数字}]}]}',
+  ].filter(l=>l!=='').join('\n');
+  const prompt=promptLines;
+
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:2000,messages:[{role:'user',content:prompt}]})
+    });
+    const data=await res.json();
+    const raw=data.content.map(x=>x.text||'').join('');
+    const json=raw.replace(/```json|```/g,'').trim();
+    const result=JSON.parse(json);
+    clearInterval(tick);
+    steps.forEach(s=>{document.getElementById(s).classList.add('done');document.getElementById(s).classList.remove('active');});
+
+    // Setup system
+    userName=quizData.name;
+    cats=result.cats;
+    shopItems=result.defaultShopItems.map((s,i)=>({id:i+1,...s,redeemed:0}));
+    localStorage.setItem('user_name',userName);
+    save();
+
+    setTimeout(()=>{initApp(result.greeting);},800);
+  }catch(e){
+    // Fallback: use default system
+    clearInterval(tick);
+    userName=quizData.name;
+    cats=buildFallbackCats(quizData);
+    shopItems=[
+      {id:1,name:"🎬 看一部电影",cost:80,redeemed:0},
+      {id:2,name:"🍜 点一份喜欢的食物",cost:100,redeemed:0},
+      {id:3,name:"💆 做个护肤",cost:150,redeemed:0},
+      {id:4,name:"🛍️ 买一件想要的东西",cost:300,redeemed:0},
+    ];
+    localStorage.setItem('user_name',userName);
+    save();
+    setTimeout(()=>initApp('欢迎加入自律星球，'+userName+'！'),800);
+  }
+}
+
+function buildFallbackCats(data){
+  // Simple fallback based on selected goals
+  const hasSleep=data.goals.includes('sleep'),hasStudy=data.goals.includes('study'),
+        hasDiet=data.goals.includes('diet'),hasExercise=data.goals.includes('exercise'),
+        hasMental=data.goals.includes('mental');
+  const result=[];
+  if(hasStudy||true) result.push({name:"学习成长",icon:"📚",color:"#FFD740",tasks:[{id:"study1",label:"核心学习 ≥ 1小时",type:"tiered",tiers:[{label:"≥ 2小时",pts:25},{label:"1-2小时",pts:15},{label:"30分钟",pts:8},{label:"未完成",pts:0}]},{id:"study2",label:"复习/整理笔记",type:"check",pts:5}]});
+  if(hasSleep||true) result.push({name:"作息管理",icon:"🌙",color:"#40C4FF",tasks:[{id:"sleep1",label:"23:00前上床",type:"check",pts:10},{id:"wake1",label:"7:30前起床",type:"check",pts:8},{id:"getup1",label:"起床后30分钟不看手机",type:"check",pts:5}]});
+  if(hasDiet||true) result.push({name:"健康饮食",icon:"🥗",color:"#00E676",tasks:[{id:"diet1",label:"吃了早饭",type:"check",pts:10},{id:"water1",label:"喝够水 ≥ 1500ml",type:"check",pts:7},{id:"diet2",label:"饮食控制",type:"tiered",tiers:[{label:"完全健康",pts:8},{label:"基本控制",pts:4},{label:"没控制",pts:0}]}]});
+  if(hasExercise||true) result.push({name:"运动锻炼",icon:"💪",color:"#FF9100",tasks:[{id:"ex1",label:"今日运动",type:"daily_input",target:30,maxPts:12},{id:"ex2",label:"步行 ≥ 5000步",type:"check",pts:5}]});
+  if(hasMental||true) result.push({name:"心理状态",icon:"🧠",color:"#E040FB",tasks:[{id:"m1",label:"专注开始，不拖延",type:"check",pts:5}]});
+  return result;
+}
+
+// ── INIT APP ─────────────────────────────────────────
+function initApp(greeting){
+  showScreen('s-app');
+  const hour=new Date().getHours();
+  const greet=hour<12?'早上好':hour<18?'下午好':'晚上好';
+  document.getElementById('userGreeting').textContent=(greeting||greet+'，'+userName+'！');
+
+  // Quote
+  const qIdx=(()=>{const k='q_'+todayKey();let i=parseInt(localStorage.getItem(k));if(isNaN(i)){i=~~(Math.random()*QUOTES.length);localStorage.setItem(k,i);}return i;})();
+  const q=QUOTES[qIdx];
+  document.getElementById('quoteText').textContent=q.q;
+  document.getElementById('quoteAuthor').textContent=q.a;
+  document.getElementById('quoteIco').textContent=q.ico;
+
+  prevScore=calcScore();
+  buildToday();
+  updateHeader();
+}
+
+// ── SCORING ──────────────────────────────────────────
+function getCatTheme(cat){
+  const c=cat.color||'#00E676';
+  const hex=c.replace('#','');
+  const r=parseInt(hex.slice(0,2),16),g=parseInt(hex.slice(2,4),16),b=parseInt(hex.slice(4,6),16);
+  const dk='#'+[r,g,b].map(x=>Math.max(0,x-40).toString(16).padStart(2,'0')).join('');
+  return{c,dk,lt:c+'20'};
+}
+function dailyInputPts(task){
+  const mins=checks[task.id+'_mins']||0;
+  const target=task.target||30,maxPts=task.maxPts||task.pts||5;
+  if(mins<=0)return 0;
+  return Math.min(maxPts,Math.round(maxPts*(mins/target)*10)/10);
+}
+function calcScore(){
+  let s=0;
+  if(!cats)return 0;
+  cats.forEach(cat=>cat.tasks.forEach(t=>{
+    if(t.type==='check'&&checks[t.id])s+=t.pts;
+    else if(t.type==='tiered'&&checks[t.id]!==undefined)s+=t.tiers[checks[t.id]].pts;
+    else if(t.type==='daily_input')s+=dailyInputPts(t);
+  }));
+  return Math.min(100,Math.round(s*10)/10);
+}
+function catScore(cat){
+  let s=0;cat.tasks.forEach(t=>{
+    if(t.type==='check'&&checks[t.id])s+=t.pts;
+    else if(t.type==='tiered'&&checks[t.id]!==undefined)s+=t.tiers[checks[t.id]].pts;
+    else if(t.type==='daily_input')s+=dailyInputPts(t);
+  });return Math.round(s*10)/10;
+}
+function catMax(cat){
+  let m=0;cat.tasks.forEach(t=>{
+    if(t.type==='check')m+=t.pts;
+    else if(t.type==='tiered')m+=Math.max(...t.tiers.map(x=>x.pts));
+    else if(t.type==='daily_input')m+=(t.maxPts||t.pts||5);
+  });return m;
+}
+
+// ── HEADER ───────────────────────────────────────────
+function getLevel(){let lv=LEVELS[0],idx=0;for(let i=0;i<LEVELS.length;i++)if(totalXP>=LEVELS[i].min){lv=LEVELS[i];idx=i;}return{lv,idx};}
+function getStreak(){let s=0;const d=new Date();for(let i=1;i<=90;i++){const dd=new Date(d);dd.setDate(d.getDate()-i);const k=dd.toISOString().slice(0,10);if((history[k]||0)>=80)s++;else break;}return s;}
+function getTaskStreak(id){let s=0;const d=new Date();for(let i=1;i<=60;i++){const dd=new Date(d);dd.setDate(d.getDate()-i);const k=dd.toISOString().slice(0,10);const c=JSON.parse(localStorage.getItem('checks_'+k)||'{}');if(c[id])s++;else break;}return s;}
+
+let animVal=0,animTarget=0,animFrame=null;
+function animScore(target){animTarget=target;if(animFrame)cancelAnimationFrame(animFrame);const step=()=>{const d=animTarget-animVal;if(Math.abs(d)<0.1){animVal=animTarget;document.getElementById('scoreNum').textContent=Math.round(animVal);return;}animVal+=d*.15;document.getElementById('scoreNum').textContent=Math.round(animVal);animFrame=requestAnimationFrame(step);};animFrame=requestAnimationFrame(step);}
+
+function updateHeader(){
+  const score=calcScore();history[todayKey()]=score;save();
+  animScore(score);
+  const sn=document.getElementById('scoreNum');
+  sn.style.color=score>=100?'#FFC800':score>=90?'#CE82FF':score>=80?'#58CC02':getComputedStyle(document.documentElement).getPropertyValue('--text');
+  const pf=document.getElementById('progFill');
+  pf.style.width=score+'%';
+  pf.style.background=score>=100?'linear-gradient(90deg,#FFC800,#FF9600)':score>=90?'linear-gradient(90deg,#CE82FF,#1CB0F6)':score>=80?'linear-gradient(90deg,#58CC02,#1CB0F6)':'linear-gradient(90deg,#1CB0F6,#58CC02)';
+  [80,90,100].forEach(m=>{const el=document.getElementById('m'+m);const hit=score>=m;el.classList.toggle('hit',hit);el.textContent=(hit?'✓ ':'')+m;});
+  const {lv,idx}=getLevel();const next=LEVELS[idx+1];
+  document.getElementById('lvIco').textContent=lv.i;
+  document.getElementById('lvTxt').textContent='Lv.'+idx+' '+lv.n;
+  if(next){const xpPct=Math.min((totalXP-lv.min)/(next.min-lv.min)*100,100);document.getElementById('xpFill').style.width=xpPct+'%';document.getElementById('xpLbl').textContent='⭐ '+totalXP+' · '+next.n+' 差'+(next.min-totalXP);}
+  else{document.getElementById('xpFill').style.width='100%';document.getElementById('xpLbl').textContent='⭐ '+totalXP+' · 已满级！';}
+  const streak=getStreak(),bc=document.getElementById('badgesCol');bc.innerHTML='';
+  if(streak>0){const b=document.createElement('div');b.className='rbadge';b.style.cssText='color:#E6A800;border-color:#FFC800;background:#FFF3CD;font-weight:800;border-radius:10px;padding:4px 9px;font-size:10px;border:2px solid;';b.textContent='🔥 '+streak+'天';bc.appendChild(b);}
+  const RWDS=[{min:100,l:'🏆 大奖励',c:'#E6A800',bc:'#FFC800',bg:'#FFF3CD'},{min:90,l:'🎁 中奖励',c:'#A560D8',bc:'#CE82FF',bg:'#F0DCFF'},{min:80,l:'✨ 小奖励',c:'#46A302',bc:'#58CC02',bg:'#D7F5B1'}];
+  const rwd=RWDS.find(r=>score>=r.min);if(rwd){const b=document.createElement('div');b.className='rbadge';b.style.cssText=`color:${rwd.c};border-color:${rwd.bc};background:${rwd.bg};`;b.textContent=rwd.l;bc.appendChild(b);}
+  checkAch(score);
+  if(roomCode&&nickName)syncRank(score);
+  updateDesignScorePill();
+}
+
+function calcDesignScore(){
+  if(!cats)return 0;
+  let total=0;
+  cats.forEach(cat=>cat.tasks.forEach(t=>{
+    if(t.type==='check')total+=t.pts||0;
+    else if(t.type==='tiered')total+=Math.max(...(t.tiers||[]).map(x=>x.pts||0));
+    else if(t.type==='daily_input')total+=(t.maxPts||t.pts||0);
+  }));
+  return Math.round(total*10)/10;
+}
+
+function updateDesignScorePill(){
+  const pill=document.getElementById('designScorePill');
+  if(!pill)return;
+  const ds=calcDesignScore();
+  if(ds===100){pill.style.display='none';return;}
+  pill.style.display='block';
+  if(ds>100){
+    pill.style.cssText='border-radius:10px;padding:3px 9px;font-size:10px;font-weight:800;border:1px solid;white-space:nowrap;cursor:pointer;color:var(--red-dk);border-color:var(--red);background:var(--red-lt);';
+    pill.textContent='⚠️ 设计总分 '+ds+'/100';
+  } else {
+    pill.style.cssText='border-radius:10px;padding:3px 9px;font-size:10px;font-weight:800;border:1px solid;white-space:nowrap;cursor:pointer;color:var(--gold-dk);border-color:var(--gold);background:var(--gold-lt);';
+    pill.textContent='📋 设计总分 '+ds+'/100';
+  }
+}
+
+// ── BUILD TODAY ───────────────────────────────────────
+function buildToday(){
+  const c=document.getElementById('page-today');
+  const qcard=c.querySelector('.quote-card');
+  c.innerHTML='';c.appendChild(qcard);
+  if(!cats)return;
+  cats.forEach((cat,ci)=>{
+    const theme=getCatTheme(cat);
+    const div=document.createElement('div');div.className='cat';
+    const sc=catScore(cat),max=catMax(cat);
+    div.innerHTML=`<div class="cat-hdr"><div class="cat-left"><div class="cat-icon-box" style="background:${theme.lt};border-color:${theme.c}">${cat.icon}</div><div class="cat-name">${cat.name}</div></div><div style="display:flex;align-items:center;gap:6px;"><div class="cat-score-pill" style="background:${theme.lt};border-color:${theme.c};color:${theme.c}">${sc}/${max}</div><button onclick="openAddTask(${ci})" style="background:none;border:1px dashed var(--border);border-radius:8px;padding:3px 8px;font-size:11px;font-weight:700;color:var(--muted);cursor:pointer;font-family:inherit;white-space:nowrap;">+ 任务</button><button onclick="delCat(${ci})" style="background:none;border:none;color:var(--dim);font-size:18px;cursor:pointer;padding:0 3px;line-height:1;flex-shrink:0;">×</button></div></div>`;
+    cat.tasks.forEach((task,ti)=>div.appendChild(buildTask(task,theme,ci,ti)));
+    // Add cat button after last category
+    if(ci===cats.length-1){
+      const addCatBtn=document.createElement('button');
+      addCatBtn.style.cssText='width:100%;background:transparent;border:1px dashed var(--border);border-radius:14px;padding:12px;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer;font-family:inherit;margin-top:4px;';
+      addCatBtn.textContent='+ 添加新类别';
+      addCatBtn.onclick=openAddCat;
+      div.appendChild(addCatBtn);
+    }
+    c.appendChild(div);
+  });
+}
+
+function buildTask(task,theme,ci,ti){
+  const wrap=document.createElement('div');
+  if(task.type==='check'){
+    const done=!!checks[task.id];
+    wrap.className='task-card'+(done?' done':'');
+    wrap.style.setProperty('--tc',theme.c);wrap.style.setProperty('--tc-lt',theme.lt);
+    wrap.innerHTML=`<div class="task-inner"><div class="t-circle">${done?'✓':''}</div><div class="t-label">${task.label}</div><div class="t-pts">+${task.pts}</div><button onclick="event.stopPropagation();delTask(${ci},${ti})" style="background:none;border:none;color:var(--dim);font-size:15px;cursor:pointer;padding:0 2px;margin-left:2px;flex-shrink:0;">×</button></div>`;
+    wrap.onclick=()=>{
+      const was=!!checks[task.id];checks[task.id]=was?undefined:true;if(!checks[task.id])delete checks[task.id];
+      if(!was){totalXP+=task.pts;totalPoints+=task.pts;}else{totalXP=Math.max(0,totalXP-task.pts);totalPoints=Math.max(0,totalPoints-task.pts);}
+      save();buildToday();updateHeader();if(!was)showToast('+'+task.pts+' 分 ⭐ +'+task.pts+' xp');
+    };
+  } else if(task.type==='tiered'){
+    const sel=checks[task.id];const done=sel!==undefined&&task.tiers[sel]?.pts>0;
+    wrap.className='tiered-card'+(done?' done':'');
+    wrap.style.setProperty('--tc',theme.c);
+    const optsHTML=task.tiers.map((t,i)=>`<button class="tier-opt ${sel===i?'active':''}" style="${sel===i?`background:${theme.c};border-color:${theme.c};`:''}" onclick="setTier(${ci},${ti},${i},event)">${t.label}${t.pts>0?'<br><span style=font-size:9px>+'+t.pts+'</span>':''}</button>`).join('');
+    wrap.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 13px 0;"><div class="tiered-lbl" style="padding:0;margin:0;">${task.label}</div><button onclick="delTask(${ci},${ti})" style="background:none;border:none;color:var(--dim);font-size:15px;cursor:pointer;padding:0 2px;">×</button></div><div class="tier-opts">${optsHTML}</div>`;
+  } else if(task.type==='daily_input'){
+    const mins=checks[task.id+'_mins']||0,pts=dailyInputPts(task),done=pts>0;
+    const target=task.target||30,maxPts=task.maxPts||task.pts||5;
+    const pct=Math.min(mins/target*100,100);
+    wrap.className='input-card'+(done?' done':'');
+    wrap.style.setProperty('--tc',theme.c);
+    wrap.innerHTML=`<div class="input-top"><div class="input-circle">${done?'✓':''}</div><div class="input-lbl">${task.label}</div><div class="input-pts">+${Math.round(pts*10)/10}/${maxPts}</div><button onclick="delTask(${ci},${ti})" style="background:none;border:none;color:#44445A;font-size:15px;cursor:pointer;padding:0 2px;flex-shrink:0;">×</button></div>
+    <div class="input-row"><input type="number" class="mins-inp" style="border-color:${done?theme.c:'var(--border)'}" placeholder="输入分钟数" value="${mins||''}" onchange="setDailyMins(${ci},${ti},this.value)"><span style="font-size:11px;font-weight:700;color:var(--muted)">分钟</span></div>
+    <div class="mini-prog"><div class="mini-fill" style="width:${pct}%;background:${theme.c}"></div></div>
+    <div class="tiers-hint">达到 ${target} 分钟满分 +${maxPts} · 按比例得分</div>`;
+  }
+  return wrap;
+}
+
+function setTier(ci,ti,val,e){
+  e.stopPropagation();
+  const task=cats[ci].tasks[ti];
+  const prevPts=checks[task.id]!==undefined?task.tiers[checks[task.id]]?.pts||0:0;
+  checks[task.id]=checks[task.id]===val?undefined:val;
+  const newPts=checks[task.id]!==undefined?task.tiers[checks[task.id]]?.pts||0:0;
+  totalXP=Math.max(0,totalXP-prevPts+newPts);totalPoints=Math.max(0,totalPoints-prevPts+newPts);
+  save();buildToday();updateHeader();if(newPts>0)showToast('+'+newPts+' 分 ⭐ +'+newPts+' xp');
+}
+function setDailyMins(ci,ti,val){
+  const task=cats[ci].tasks[ti];
+  const mins=parseInt(val)||0,prev=checks[task.id+'_mins']||0;
+  const prevPts=dailyInputPts(task);
+  checks[task.id+'_mins']=mins;
+  const newPts=dailyInputPts(task);
+  totalXP=Math.max(0,totalXP-prevPts+newPts);totalPoints=Math.max(0,totalPoints-prevPts+newPts);
+  save();buildToday();updateHeader();
+  if(newPts>prevPts)showToast('+'+Math.round((newPts-prevPts)*10)/10+' 分 ⭐');
+}
+
+// ── ACHIEVEMENTS ─────────────────────────────────────
+const ACHIEVEMENTS=[
+  {id:"first",ico:"🎯",name:"初次打卡",desc:"完成第一次打卡",check:()=>Object.keys(history).length>=1},
+  {id:"s80",ico:"✨",name:"良好一天",desc:"单日得分≥80",check:()=>Object.values(history).some(s=>s>=80)},
+  {id:"s90",ico:"🌟",name:"优秀一天",desc:"单日得分≥90",check:()=>Object.values(history).some(s=>s>=90)},
+  {id:"s100",ico:"💯",name:"完美一天",desc:"单日满分100",check:()=>Object.values(history).some(s=>s>=100)},
+  {id:"str3",ico:"🔥",name:"三天连续",desc:"连续3天≥80分",check:()=>getStreak()>=3},
+  {id:"str7",ico:"🚀",name:"一周坚持",desc:"连续7天≥80分",check:()=>getStreak()>=7},
+  {id:"str30",ico:"🏆",name:"一月传奇",desc:"连续30天≥80分",check:()=>getStreak()>=30},
+  {id:"xp500",ico:"⭐",name:"经验达人",desc:"累计经验值500+",check:()=>totalXP>=500},
+  {id:"redeem1",ico:"🎁",name:"第一次兑换",desc:"兑换了一个奖励",check:()=>(shopItems||[]).some(s=>s.redeemed>0)},
+  {id:"str14",ico:"💎",name:"两周勇士",desc:"连续14天≥80分",check:()=>getStreak()>=14},
+  {id:"pts1000",ico:"🏅",name:"积分富翁",desc:"累计积分1000+",check:()=>totalPoints>=1000},
+  {id:"perfect3",ico:"🌈",name:"三连完美",desc:"连续3天满分",check:()=>{const d=new Date();for(let i=1;i<=3;i++){const dd=new Date(d);dd.setDate(d.getDate()-i);const k=dd.toISOString().slice(0,10);if((history[k]||0)<100)return false;}return true;}},
+];
+function checkAch(score){
+  const newUnlocked=ACHIEVEMENTS.filter(a=>a.check()).map(a=>a.id);
+  const gained=newUnlocked.filter(id=>!unlockedAch.includes(id));
+  unlockedAch=newUnlocked;saveAch();
+  gained.forEach((id,i)=>{const a=ACHIEVEMENTS.find(x=>x.id===id);setTimeout(()=>celebrate(a.ico,'成就解锁！'+a.name,a.desc),500+i*3200);});
+  const ms=[{s:80,e:'✨',t:'太棒了！≥ 80 分',sub:'小奖励已解锁 🎁'},{s:90,e:'🌟',t:'优秀！≥ 90 分',sub:'中奖励已解锁！'},{s:100,e:'🎉',t:'满分！100 分！',sub:'大奖励已解锁 🏆'}];
+  ms.forEach(m=>{if(prevScore<m.s&&score>=m.s)setTimeout(()=>celebrate(m.e,m.t,m.sub),200);});
+  prevScore=score;
+}
+function buildAch(){
+  const ul=unlockedAch.length;
+  document.getElementById('achProg').textContent='已解锁 '+ul+' / '+ACHIEVEMENTS.length+' 个成就';
+  const grid=document.getElementById('achGrid');grid.innerHTML='';
+  ACHIEVEMENTS.forEach(a=>{const u=unlockedAch.includes(a.id);const card=document.createElement('div');card.className='ach-card'+(u?' unlocked':'');card.innerHTML=`<div class="ach-ico">${a.ico}</div><div class="ach-name">${a.name}</div><div class="ach-desc">${a.desc}</div>`;grid.appendChild(card);});
+}
+
+// ── SHOP ─────────────────────────────────────────────
+function buildShop(){
+  document.getElementById('shopBal').textContent=totalPoints;
+  const list=document.getElementById('shopList');list.innerHTML='';
+  if(!shopItems||!shopItems.length){list.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px;">添加你想要的奖励吧！</div>';return;}
+  shopItems.forEach((item,i)=>{
+    const can=totalPoints>=item.cost;
+    const rawName=item.name;
+    const hasEmoji=/^\p{Emoji}/u.test(rawName);
+    const displayEmoji=hasEmoji?rawName.match(/^\S+/)[0]:guessEmoji(rawName);
+    const displayName=hasEmoji?rawName:displayEmoji+' '+rawName;
+    const div=document.createElement('div');div.className='shop-item-card';
+    div.innerHTML=`<div style="font-size:24px;">${displayEmoji}</div><div style="flex:1;"><div class="shop-item-name">${displayName}</div><div style="font-size:10px;color:var(--muted);font-weight:600;margin-top:2px;">已兑换 ${item.redeemed} 次</div></div><div class="shop-item-cost">${item.cost} pts</div><button class="redeem-btn" ${!can?'disabled':''} onclick="redeemItem(${i})">兑换</button><button onclick="delShopItem(${i})" style="background:none;border:none;color:var(--dim);font-size:17px;cursor:pointer;padding:0 4px;margin-left:2px;">×</button>`;
+    list.appendChild(div);
+  });
+}
+function addShopItem(){
+  const name=document.getElementById('shopNameInp').value.trim(),cost=parseInt(document.getElementById('shopCostInp').value)||0;
+  if(!name||cost<=0)return;
+  if(!shopItems)shopItems=[];
+  shopItems.push({id:Date.now(),name,cost,redeemed:0});
+  document.getElementById('shopNameInp').value='';document.getElementById('shopCostInp').value='';
+  save();buildShop();showToast('奖励已添加 🎁');
+}
+function redeemItem(i){
+  const item=shopItems[i];if(totalPoints<item.cost)return;
+  if(!confirm('用 '+item.cost+' 积分兑换「'+item.name+'」？'))return;
+  totalPoints-=item.cost;shopItems[i].redeemed++;save();
+  checkAch(calcScore());
+  buildShop();celebrate('🎁','奖励已兑换！',item.name);
+}
+function delShopItem(i){shopItems.splice(i,1);save();buildShop();}
+
+// ── RANK ─────────────────────────────────────────────
+async function joinRoom(){
+  const code=document.getElementById('roomCodeInp').value.trim().toUpperCase();
+  const nick=document.getElementById('nickInp').value.trim();
+  if(!code||!nick){showToast('请填写房间码和昵称');return;}
+  roomCode=code;nickName=nick;
+  localStorage.setItem('room_code',roomCode);localStorage.setItem('nick_name',nickName);
+  document.getElementById('roomStatus').textContent='已加入 · '+roomCode+' · '+nick;
+  showToast('已加入房间 '+roomCode+' 🎉');
+  await syncRank(calcScore());loadRank();
+}
+async function syncRank(score){
+  if(!roomCode||!nickName)return;
+  const today=todayKey();
+  const stored=JSON.parse(localStorage.getItem('rank_'+roomCode+'_'+today)||'[]');
+  const idx=stored.findIndex(r=>r.name===nickName);
+  if(idx>=0)stored[idx]={name:nickName,score,isMe:true};
+  else stored.push({name:nickName,score,isMe:true});
+  localStorage.setItem('rank_'+roomCode+'_'+today,JSON.stringify(stored));
+}
+function loadRank(){
+  const today=todayKey();
+  const stored=JSON.parse(localStorage.getItem('rank_'+roomCode+'_'+today)||'[]');
+  const myScore=history[today]||calcScore();
+  const idx=stored.findIndex(r=>r.name===nickName);
+  if(idx>=0)stored[idx]={name:nickName,score:myScore,isMe:true};
+  else stored.push({name:nickName,score:myScore,isMe:true});
+  renderRank(stored.sort((a,b)=>b.score-a.score));
+}
+function renderRank(data){
+  const list=document.getElementById('rankList');list.innerHTML='';
+  if(!data.length)return;
+  const medals=['🥇','🥈','🥉'];
+  data.forEach((r,i)=>{
+    const card=document.createElement('div');card.className='rank-item';
+    if(r.isMe)card.style.cssText='border-color:var(--green);background:var(--green-lt);box-shadow:none;';
+    card.innerHTML=`<div class="rank-medal">${medals[i]||'#'+(i+1)}</div><div style="flex:1;"><div class="rank-name">${r.name}${r.isMe?' (我)':''}</div><div class="rank-sub">${today} · ${r.score>=80?'🔥 已达标':'继续加油'}</div></div><div class="rank-score" style="color:${r.score>=100?'#FFD740':r.score>=80?'#00E676':'var(--muted)'}">${r.score}</div>`;
+    list.appendChild(card);
+  });
+  const shareBtn=document.createElement('button');
+  shareBtn.style.cssText='width:100%;background:var(--blue);color:#000;border:none;border-radius:14px;padding:13px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;margin-top:8px;';
+  shareBtn.textContent='📤 邀请朋友加入 '+roomCode;
+  shareBtn.onclick=()=>{
+    const txt=`我在用【自律星球】打卡！加入房间「${roomCode}」和我一起比拼每日得分 💪`;
+    if(navigator.share)navigator.share({title:'自律星球',text:txt});
+    else{navigator.clipboard?.writeText(txt).then(()=>showToast('邀请文字已复制！'));}
+  };
+  list.appendChild(shareBtn);
+}
+
+// ── STATS ─────────────────────────────────────────────
+function fmtDate(d){return`${d.getFullYear().toString().slice(2)}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+function buildStats(){
+  const scores=Object.values(history).filter(s=>s>0);
+  const avg=scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):0;
+  document.getElementById('statsOverview').innerHTML=`<div class="stat-ttl">总览</div>
+    <div class="stat-row"><span class="stat-lbl">📅 打卡总天数</span><span class="stat-val">${Object.keys(history).length} 天</span></div>
+    <div class="stat-row"><span class="stat-lbl">📊 平均得分</span><span class="stat-val">${avg} 分</span></div>
+    <div class="stat-row"><span class="stat-lbl">🏅 最高得分</span><span class="stat-val">${scores.length?Math.max(...scores):0} 分</span></div>
+    <div class="stat-row"><span class="stat-lbl">✅ ≥80分天数</span><span class="stat-val">${scores.filter(s=>s>=80).length} 天</span></div>
+    <div class="stat-row"><span class="stat-lbl">🔥 当前连续</span><span class="stat-val">${getStreak()} 天</span></div>
+    <div class="stat-row"><span class="stat-lbl">⭐ 累计经验值</span><span class="stat-val">${totalXP} xp</span></div>`;
+  const chart=document.getElementById('barChart');chart.innerHTML='';
+  for(let i=6;i>=0;i--){
+    const d=new Date();d.setDate(d.getDate()-i);
+    const k=d.toISOString().slice(0,10);const s=history[k]||0;
+    const col=s>=100?'#FFC800':s>=90?'#CE82FF':s>=80?'#58CC02':'#E5E5E5';
+    const row=document.createElement('div');row.className='bar-row';
+    row.innerHTML=`<div class="bar-day">${fmtDate(d)}</div><div class="bar-track"><div class="bar-fill" style="width:${s}%;background:${col};"><span class="bar-lbl" style="color:${s>20?'#000':'transparent'}">${s||''}</span></div></div>`;
+    chart.appendChild(row);
+  }
+  const grid=document.getElementById('histGrid');grid.innerHTML='';const today=todayKey();
+  for(let i=29;i>=0;i--){
+    const d=new Date();d.setDate(d.getDate()-i);const k=d.toISOString().slice(0,10);const s=history[k];
+    const cell=document.createElement('div');cell.className='hist-cell'+(k===today?' today':'');
+    if(s!==undefined){cell.style.background=s>=100?'#FFF3CD':s>=90?'#F0DCFF':s>=80?'#D7F5B1':'#FFD0D0';cell.style.borderColor=s>=100?'#FFC800':s>=90?'#CE82FF':s>=80?'#58CC02':'#FF4B4B';}
+    cell.innerHTML=`<div>${fmtDate(d).slice(3)}</div>${s!==undefined?`<div class="hist-s" style="color:${s>=80?'#fff':'#C47A7A'}">${s}</div>`:''}`;
+    grid.appendChild(cell);
+  }
+}
+
+// ── UTILS ─────────────────────────────────────────────
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000);}
+function celebrate(emoji,text,sub){const cel=document.getElementById('cel'),box=document.getElementById('celBox');cel.style.display='flex';document.getElementById('celEmoji').textContent=emoji;document.getElementById('celText').textContent=text;document.getElementById('celSub').textContent=sub;setTimeout(()=>box.classList.add('show'),10);spawnConfetti();setTimeout(()=>{box.classList.remove('show');setTimeout(()=>cel.style.display='none',400);},2800);}
+function spawnConfetti(){const cols=['#FFD740','#00E676','#40C4FF','#E040FB','#FF9100','#FF5252'];for(let i=0;i<30;i++){const el=document.createElement('div');el.className='confetti';el.style.cssText=`left:${Math.random()*100}vw;top:-10px;background:${cols[~~(Math.random()*cols.length)]};animation-delay:${Math.random()*.5}s;animation-duration:${1+Math.random()}s;border-radius:${Math.random()>.5?'50%':'2px'};`;document.body.appendChild(el);setTimeout(()=>el.remove(),2500);}}
+
+function confirmReset(){
+  const overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;';
+  overlay.innerHTML=`<div style="background:var(--bg2);border:2px solid var(--red);border-radius:20px;padding:24px;width:100%;max-width:320px;text-align:center;">
+    <div style="font-size:36px;margin-bottom:12px;">⚠️</div>
+    <div style="font-size:16px;font-weight:800;color:#F0F0FF;margin-bottom:8px;">确定重新生成？</div>
+    <div style="font-size:13px;color:#8888AA;margin-bottom:20px;line-height:1.6;">所有数据（历史记录、积分、成就）都会清除，重新回答问卷生成新系统。</div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="this.closest('div[style]').remove()" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:13px;font-size:14px;font-weight:800;color:var(--muted);cursor:pointer;font-family:inherit;">取消</button>
+      <button onclick="localStorage.clear();location.reload();" style="flex:1;background:var(--red);border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;font-family:inherit;">确定清除</button>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+}
+function resetToday(){
+  const overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;';
+  overlay.innerHTML=`<div style="background:var(--bg2);border:2px solid var(--border);border-radius:20px;padding:24px;width:100%;max-width:320px;text-align:center;">
+    <div style="font-size:36px;margin-bottom:12px;">🗑️</div>
+    <div style="font-size:16px;font-weight:800;color:#F0F0FF;margin-bottom:8px;">清除今日打卡？</div>
+    <div style="font-size:13px;color:#8888AA;margin-bottom:20px;">历史记录和积分不受影响。</div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="this.closest('div[style]').remove()" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:13px;font-size:14px;font-weight:800;color:var(--muted);cursor:pointer;font-family:inherit;">取消</button>
+      <button onclick="localStorage.removeItem('checks_'+new Date().toISOString().slice(0,10));location.reload();" style="flex:1;background:var(--green);border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;font-family:inherit;">确定</button>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+}
+function switchTab(tab){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+tab).classList.add('active');
+  document.querySelector(`[onclick="switchTab('${tab}')"].tab`)?.classList.add('active');
+  const nb=document.getElementById('nav-'+tab);if(nb)nb.classList.add('active');
+  if(tab==='achievements')buildAch();
+  if(tab==='shop')buildShop();
+  if(tab==='stats')buildStats();
+  if(tab==='settings'){
+    document.getElementById('settingsName').textContent=userName||'-';
+    document.getElementById('settingsXP').textContent=totalXP+' xp';
+    document.getElementById('settingsPts').textContent=totalPoints+' pts';
+    const ds=calcDesignScore();
+    const dsEl=document.getElementById('settingsDesign');
+    dsEl.textContent=ds+'/100';
+    dsEl.style.color=ds===100?'#46A302':ds>100?'#FF4B4B':'#FFC800';
+  }
+  if(tab==='rank'){
+    document.getElementById('roomCodeInp').value=roomCode;
+    document.getElementById('nickInp').value=nickName;
+    if(roomCode&&nickName){document.getElementById('roomStatus').textContent='当前房间：'+roomCode+' · '+nickName;loadRank();}
+  }
+}
+
+// ── AUTO-LOGIN ────────────────────────────────────────
+if(userName&&cats){initApp();}
+
+// ── TASK & CAT MANAGEMENT ────────────────────────────
+let _editCatIdx=null;
+
+function openModal(id){
+  const el=document.getElementById(id);
+  el.style.display='flex';
+  setTimeout(()=>el.style.opacity='1',10);
+}
+function closeModal(id,e){
+  if(e&&e.target!==document.getElementById(id))return;
+  document.getElementById(id).style.display='none';
+}
+function onTaskTypeChange(){
+  const t=document.getElementById('taskTypeInp').value;
+  document.getElementById('taskTargetWrap').style.display=t==='daily_input'?'block':'none';
+  onTaskPtsChange();
+}
+function onTaskPtsChange(){
+  const t=document.getElementById('taskTypeInp').value;
+  const pts=document.getElementById('taskPtsInp').value||'?';
+  document.getElementById('taskPtsHint').textContent=
+    t==='check'?'完成得 '+pts+' 分，未完成 0 分':
+    t==='tiered'?'满分 '+pts+' 分，自动生成三档（100% / 60% / 30%）':
+    t==='daily_input'?'达到目标分钟得满分 '+pts+' 分，按比例计算':'';
+  // Show design score preview
+  const ptsNum=parseInt(document.getElementById('taskPtsInp').value)||0;
+  if(ptsNum>0){
+    const current=calcDesignScore();
+    const after=Math.round((current+ptsNum)*10)/10;
+    const el=document.getElementById('taskDesignScore');
+    el.style.display='block';
+    if(after===100){
+      el.style.cssText='font-size:12px;font-weight:800;text-align:center;padding:8px;border-radius:10px;margin-bottom:12px;background:var(--green-lt);color:var(--green-dk);border:1px solid var(--green);';
+      el.textContent='✅ 添加后总分恰好 100 分！';
+    } else if(after>100){
+      el.style.cssText='font-size:12px;font-weight:800;text-align:center;padding:8px;border-radius:10px;margin-bottom:12px;background:var(--red-lt);color:var(--red-dk);border:1px solid var(--red);';
+      el.textContent='⚠️ 添加后总分将达 '+after+'/100，超出 '+(Math.round((after-100)*10)/10)+' 分';
+    } else {
+      el.style.cssText='font-size:12px;font-weight:800;text-align:center;padding:8px;border-radius:10px;margin-bottom:12px;background:var(--gold-lt);color:var(--gold-dk);border:1px solid var(--gold);';
+      el.textContent='📋 添加后总分 '+after+'/100，还差 '+(Math.round((100-after)*10)/10)+' 分';
+    }
+  } else {
+    document.getElementById('taskDesignScore').style.display='none';
+  }
+}
+function openAddTask(ci){
+  _editCatIdx=ci;
+  document.getElementById('taskModalTitle').textContent='添加任务 · '+cats[ci].name;
+  document.getElementById('taskLabelInp').value='';
+  document.getElementById('taskPtsInp').value='';
+  document.getElementById('taskTypeInp').value='check';
+  document.getElementById('taskTargetWrap').style.display='none';
+  document.getElementById('taskPtsHint').textContent='';
+  openModal('taskModal');
+}
+function saveTask(){
+  const label=document.getElementById('taskLabelInp').value.trim();
+  const pts=parseInt(document.getElementById('taskPtsInp').value)||5;
+  const type=document.getElementById('taskTypeInp').value;
+  if(!label){showToast('请输入任务名称');return;}
+  const id='t'+Date.now();
+  let task={id,label,type};
+  if(type==='check')task.pts=pts;
+  else if(type==='tiered'){
+    task.tiers=[
+      {label:'完全做到',pts:pts},
+      {label:'部分做到',pts:Math.round(pts*0.6)},
+      {label:'基本未做',pts:Math.round(pts*0.3)},
+      {label:'未完成',pts:0},
+    ];
+  } else if(type==='daily_input'){
+    task.target=parseInt(document.getElementById('taskTargetInp').value)||30;
+    task.maxPts=pts;
+  }
+  cats[_editCatIdx].tasks.push(task);
+  save();buildToday();updateHeader();
+  closeModal('taskModal');
+  showToast('任务已添加 ✅');
+}
+function delCat(ci){
+  const overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;';
+  const catName=cats[ci].name;
+  const taskCount=cats[ci].tasks.length;
+  overlay.innerHTML=`<div style="background:#fff;border:2px solid #AFAFAF;border-radius:20px;padding:24px;width:100%;max-width:320px;text-align:center;box-shadow:0 6px 0 #AFAFAF;">
+    <div style="font-size:32px;margin-bottom:10px;">${cats[ci].icon||'📂'}</div>
+    <div style="font-size:15px;font-weight:800;color:#1C1C1E;margin-bottom:6px;">删除「${catName}」？</div>
+    <div style="font-size:12px;color:#6B7280;margin-bottom:18px;">该类别下的 ${taskCount} 个任务也会一并删除</div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="this.closest('div[style*=fixed]').remove()" style="flex:1;background:#F0F0F0;border:2px solid #AFAFAF;border-radius:12px;padding:12px;font-size:13px;font-weight:800;color:#6B7280;cursor:pointer;font-family:inherit;box-shadow:0 3px 0 #AFAFAF;">取消</button>
+      <button onclick="cats.splice(${ci},1);save();buildToday();updateHeader();this.closest('div[style*=fixed]').remove();showToast('已删除「${catName}」');" style="flex:1;background:#FF4B4B;border:2px solid #CC0000;border-radius:12px;padding:12px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;font-family:inherit;box-shadow:0 3px 0 #CC0000;">删除</button>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+}
+
+function delTask(ci,ti){
+  const overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;';
+  const taskName=cats[ci].tasks[ti].label;
+  overlay.innerHTML=`<div style="background:var(--bg2);border:2px solid var(--border);border-radius:20px;padding:24px;width:100%;max-width:320px;text-align:center;">
+    <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:8px;">删除任务？</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:16px;">${taskName}</div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="this.closest('div[style*=fixed]').remove()" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px;font-size:13px;font-weight:800;color:var(--muted);cursor:pointer;font-family:inherit;">取消</button>
+      <button onclick="cats[${ci}].tasks.splice(${ti},1);save();buildToday();updateHeader();updateDesignScorePill();this.closest('div[style*=fixed]').remove();showToast('已删除');" style="flex:1;background:var(--red);border:none;border-radius:12px;padding:12px;font-size:13px;font-weight:800;color:#fff;cursor:pointer;font-family:inherit;">删除</button>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+}
+function openAddCat(){
+  document.getElementById('catNameInp').value='';
+  document.getElementById('catIconInp').value='';
+  document.getElementById('catColorInp').value='#00E676';
+  openModal('catModal');
+}
+function saveCat(){
+  const name=document.getElementById('catNameInp').value.trim();
+  const icon=document.getElementById('catIconInp').value.trim()||'⭐';
+  const color=document.getElementById('catColorInp').value;
+  if(!name){showToast('请输入类别名称');return;}
+  cats.push({name,icon,color,tasks:[]});
+  save();buildToday();
+  closeModal('catModal');
+  showToast('类别已添加 🎉');
+}
+</script>
+<!-- ADD TASK MODAL -->
+<div id="taskModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:500;display:none;align-items:flex-end;justify-content:center;" onclick="closeModal('taskModal',event)">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:24px 24px 0 0;padding:20px;width:100%;max-width:480px;" onclick="event.stopPropagation()">
+    <div style="font-size:16px;font-weight:800;color:#F0F0FF;margin-bottom:14px;" id="taskModalTitle">添加任务</div>
+    <input id="taskLabelInp" placeholder="任务描述（如：CPA学习 ≥ 2小时）" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:11px 13px;color:var(--text);font-size:14px;font-family:inherit;outline:none;margin-bottom:8px;">
+    <div style="display:flex;gap:8px;margin-bottom:8px;">
+      <select id="taskTypeInp" onchange="onTaskTypeChange()" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:11px;color:var(--text);font-size:13px;font-family:inherit;outline:none;">
+        <option value="check">✅ 完成/未完成</option>
+        <option value="tiered">📊 阶梯得分</option>
+        <option value="daily_input">⏱ 输入时长</option>
+      </select>
+      <input id="taskPtsInp" type="number" placeholder="分值" min="1" max="50" oninput="onTaskPtsChange()" style="width:80px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:11px;color:var(--text);font-size:13px;font-family:inherit;outline:none;text-align:center;">
+    </div>
+    <div id="taskTargetWrap" style="display:none;margin-bottom:8px;">
+      <input id="taskTargetInp" type="number" placeholder="目标分钟数（如：30）" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:11px 13px;color:var(--text);font-size:13px;font-family:inherit;outline:none;">
+    </div>
+    <div id="taskPtsHint" style="font-size:11px;color:#8888AA;margin-bottom:6px;"></div>
+    <div id="taskDesignScore" style="font-size:12px;font-weight:800;text-align:center;padding:8px;border-radius:10px;margin-bottom:12px;display:none;"></div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="closeModal('taskModal')" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:13px;font-size:14px;font-weight:800;color:var(--muted);cursor:pointer;font-family:inherit;">取消</button>
+      <button onclick="saveTask()" style="flex:1;background:var(--green);border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;font-family:inherit;">保存</button>
+    </div>
+  </div>
+</div>
+<!-- ADD CAT MODAL -->
+<div id="catModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:500;align-items:flex-end;justify-content:center;" onclick="closeModal('catModal',event)">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:24px 24px 0 0;padding:20px;width:100%;max-width:480px;" onclick="event.stopPropagation()">
+    <div style="font-size:16px;font-weight:800;color:#F0F0FF;margin-bottom:14px;">新增类别</div>
+    <input id="catNameInp" placeholder="类别名称（如：财务管理）" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:11px 13px;color:var(--text);font-size:14px;font-family:inherit;outline:none;margin-bottom:8px;">
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <input id="catIconInp" placeholder="图标 emoji" style="width:80px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:11px;color:var(--text);font-size:18px;font-family:inherit;outline:none;text-align:center;">
+      <select id="catColorInp" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:11px;color:var(--text);font-size:13px;font-family:inherit;outline:none;">
+        <option value="#00E676">🟢 绿色</option>
+        <option value="#40C4FF">🔵 蓝色</option>
+        <option value="#FFD740">🟡 金色</option>
+        <option value="#E040FB">🟣 紫色</option>
+        <option value="#FF9100">🟠 橙色</option>
+        <option value="#FF5252">🔴 红色</option>
+        <option value="#4DC9B0">🩵 青色</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="closeModal('catModal')" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:13px;font-size:14px;font-weight:800;color:var(--muted);cursor:pointer;font-family:inherit;">取消</button>
+      <button onclick="saveCat()" style="flex:1;background:var(--green);border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;font-family:inherit;">添加</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
